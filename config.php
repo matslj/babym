@@ -50,7 +50,7 @@ define('WS_CHANGE_PASSWORD_ON_ADMIN', false);
 //
 define('JS_JQUERY', WS_JAVASCRIPT . 'jquery/jquery-1.7.2.min.js');
 // Javascript UI settings
-define('JS_JQUERY_UI_THEME', 'sunny'); // This is the theme currently used.
+define('JS_JQUERY_UI_THEME', 'cupertino'); // This is the theme currently used.
 define('JS_JQUERY_UI_CSS', WS_JAVASCRIPT . 'jquery-ui/' . JS_JQUERY_UI_THEME . '/jquery-ui-1.9.2.custom.css');
 
 // -------------------------------------------------------------------------------------------

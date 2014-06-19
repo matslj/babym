@@ -89,7 +89,7 @@ EOD;
         $lastDate = null;
         while($row = $result->fetch_object()) {
             // self::$LOG -> debug(" looping ");
-            $temp = new CBabyData($row -> id, $row -> type, $row -> value, $row -> date);
+            $temp = new CBabyData($row -> id, $row -> type, $row -> value, $row -> date, $row -> note);
             
             // self::$LOG -> debug($temp -> getDate() -> getDate);
             
@@ -139,7 +139,7 @@ EOD;
         
         while($row = $result->fetch_object()) {
             // self::$LOG -> debug(" looping ");
-            $bData[] = new CBabyData($row -> id, $row -> type, $row -> value, $row -> date);
+            $bData[] = new CBabyData($row -> id, $row -> type, $row -> value, $row -> date, $row -> note);
         }
         
         // self::$LOG -> debug(" done ");

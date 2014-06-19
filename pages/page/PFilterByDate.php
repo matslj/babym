@@ -19,8 +19,10 @@ $pc = CPageController::getInstance(FALSE);
 $intFilter = new CInterceptionFilter();
 $intFilter->FrontControllerIsVisitedOrDie();
 
-$method = $pc->POSTisSetOrSetDefault('method', '');
 $payload = $pc->POSTisSetOrSetDefault('payload', '');
+
+$data = json_decode($payload);
+$method = $data -> action;
 
 /**
  * Validates that a string is a valid date.
@@ -36,7 +38,7 @@ function validateDate($date, $format = 'Y-m-d') {
 
 $jsonResult = "";
 
-$log->debug("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ starting filtering page @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+$log->debug("@@@@@@@@@@@@@@@@@@@ Current command: '{$method}' @@@@@@@@@@@@@@@@@@@@@");
 
 // -------------------------------------------------------------------------------------------
 //
@@ -47,59 +49,85 @@ $mysqli = $db->Connect();
 
 $userId = 2;
 
-
 if (strcmp("selectDate", $method) == 0) {
-    $log->debug("hääär");
-    $data = json_decode($payload);
-    $log->debug("data1: " . $data);
-    if (validateDate($data)) {
-        $babyData = CBabyDataDAO::newInitializedInstance($db, $userId, $data);
-        $log->debug("data2: " . $data);
-        $jsonResult = $babyData->getBabyDataForSelectedDateAsJSON();
-        $log->debug(print_r($jsonResult, TRUE));
+    if (validateDate($data -> date)) {
+        $babyDataDAO = CBabyDataDAO::newInitializedInstance($db, $userId, $data -> date);
+        $jsonResult = $babyDataDAO->getBabyDataForSelectedDateAsJSON();
+        // $log->debug(print_r($jsonResult, TRUE));
     }
-    // $jsonResult = $babyData->getBabyDataByDate($)
 } else if (strcmp("showall", $method) == 0) {
-    $babyData = CBabyDataDAO::newEmptyInstance($userId);
-    $jsonResult = $babyData->getAllBabyDataAsJSON($db);
+    $babyDataDAO = CBabyDataDAO::newEmptyInstance($userId);
+    $jsonResult = $babyDataDAO->getAllBabyDataAsJSON($db);
 } else if (strcmp("post", $method) == 0) {
-    $babyData = CBabyDataDAO::newEmptyInstance($userId);
-    $data = json_decode($payload);
     $type = $data -> type;
     $value = $data -> value;
     $datetime = $data -> datetime . ":00";
     $note = $data -> note;
     
-    // $log -> debug($type . " " . $value);
-    
-    // Get db-function name
-    $spCreateBabyData = DBSP_CreateBabyData;
-                
-    $query = "SET @aBabyDataId = 0;";
-    $query .= "CALL {$spCreateBabyData}({$userId}, '{$type}', '{$value}', '{$note}', '{$datetime}', @aBabyDataId);";
-    $query .= "SELECT @aBabyDataId AS id;";
-    $res = $db->MultiQuery($query);
-
-    // Use results
-    $results = Array();
-    $db->RetrieveAndStoreResultsFromMultiQuery($results);
-    $log -> debug("fetching result");
-    // Retrieve and update the id of the Match-object
-    $row = $results[2]->fetch_object();
-    $log -> debug("getting row id");
-    $bDataId = $row->id;
-
-    $log -> debug("closing");
-    // Close the result set
-    $results[2]->close();
-    
-    if (!empty($bDataId)) {
-        $bData = new CBabyData($bDataId, $type, $value, $datetime, $note);
-        $tempArray = array();
-        $tempArray[] = ($bData -> toJson());
-        $jsonResult = json_encode($tempArray);
+    // Validate/sanitize input
+    $error = false;
+    $error = $error || !CBabyData::testType($type);
+    $error = $error || !validateDate($datetime, 'Y-m-d H:i:s');
+    $log->debug($value);
+    if (strcmp("Pee", $type) != 0 && strcmp("Poo", $type) != 0) {
+        $tempVal = str_replace(",", ".", $value);
+        $error = $error || !is_numeric($tempVal);
+    } else {
+        $error = $error || !(strcasecmp("ja", $value) == 0 || strcasecmp("nej", $value) == 0);
+        // $log -> debug("Error: " . $error);
     }
-    // $jsonResult = $babyData->getAllBabyDataAsJSON($db);
+    $note = $mysqli->real_escape_string($note);
+    
+    if (!$error) {
+        // Get db-function name
+        $spCreateBabyData = DBSP_CreateBabyData;
+
+        $query = "SET @aBabyDataId = 0;";
+        $query .= "CALL {$spCreateBabyData}({$userId}, '{$type}', '{$value}', '{$note}', '{$datetime}', @aBabyDataId);";
+        $query .= "SELECT @aBabyDataId AS id;";
+        $res = $db->MultiQuery($query);
+
+        // Use results
+        $results = Array();
+        $db->RetrieveAndStoreResultsFromMultiQuery($results);
+        //$log -> debug("fetching result");
+        // Retrieve and update the id of the BabyData-object
+        $row = $results[2]->fetch_object();
+        //$log -> debug("getting row id");
+        $bDataId = $row->id;
+
+        //$log -> debug("closing");
+        // Close the result set
+        $results[2]->close();
+
+        if (!empty($bDataId)) {
+            $bData = new CBabyData($bDataId, $type, $value, $datetime, $note);
+            $tempArray = array();
+            $tempArray[] = ($bData -> toJson());
+            $jsonResult = json_encode($tempArray);
+        }
+    }
+    // If insert did not go through, no id value will be returned. Test for existance of id in client.
+} else if (strcmp("delete", $method) == 0) {
+    CPageController::IsNumericOrDie($data -> id);
+    $spDeleteBabyData = DBSP_DeleteBabyData;
+    $queryDelete = "CALL {$spDeleteBabyData}({$data -> id});";
+    $res = $db->MultiQuery($queryDelete);
+    $nrOfStatements = $db->RetrieveAndIgnoreResultsFromMultiQuery();
+    
+    $status = "OK";
+
+    if($nrOfStatements != 1) {
+        // Delete not OK
+        self::$LOG -> debug("ERROR: Kunde inte radera post med id: " . $data -> id . " - number of statements: " . $nrOfStatements);
+        $status = "ERROR";
+    }
+    
+    $jsonResult .= <<< EOD
+    {
+        "status": "{$status}"
+    }
+EOD;
 }
 
 $mysqli->close();

@@ -49,6 +49,34 @@ class CBabyData {
         }
     }
     
+    public static function testType($type) {
+        $retVal = false;
+        switch ($type) {
+            case "Weight":
+                $retVal = true;
+                break;
+            case "Height":
+                $retVal = true;
+                break;
+            case "SkullSize":
+                $retVal = true;
+                break;
+            case "BreastMilk":
+                $retVal = true;
+                break;
+            case "Formula":
+                $retVal = true;
+                break;
+            case "Poo":
+                $retVal = true;
+                break;
+            case "Pee":
+                $retVal = true;
+                break;
+        }
+        return $retVal;
+    }
+    
     function __construct($id, $type, $value, $date, $note) {
         $this->id = $id;
         $this->type = $type;
@@ -120,6 +148,7 @@ class CBabyData {
             "unit" => $this->getTypeUnit(),
             "value" => $this->getValue(),
             "date" => $this->getDate()->getDate(),
+            "time" => $this->getDate()->getHour() . ":" . $this->getDate()->getMinute(),
             "timestamp" => $this->getDate()->getTimestamp(),
             "note" => $this->getNote(),
         );

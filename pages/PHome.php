@@ -63,6 +63,7 @@ $htmlHead .= <<<EOD
     <!-- jQuery UI -->
     <script src="{$js}jquery-ui/jquery-ui-1.9.2.custom.min.js"></script>
     <script src="{$js}handlebars/handlebars-v1.3.0.js"></script>
+    <script src="{$js}jquery-bbq/jquery.ba-bbq.min.js"></script>
         
     <script src="{$js}timepicker/jquery.timepicker.js"></script>
         
@@ -70,32 +71,83 @@ $htmlHead .= <<<EOD
         
     <style>
         /* Gör om css för dagens datum till samma css som alla andra (ovalda) datum */
-        .ui-datepicker-today a.ui-state-highlight {
-            background: url("{$js}jquery-ui/sunny/images/ui-bg_gloss-wave_60_fece2f_500x100.png") repeat-x scroll 50% 50% #FECE2F;
-            border: 1px solid #D19405;
-            color: #4C3000;
+        .ui-datepicker-today .ui-state-highlight {
+            background: url("{$js}jquery-ui/cupertino/images/ui-bg_glass_80_d7ebf9_1x400.png") repeat-x scroll 50% 50% #D7EBF9;
+            border: 1px solid #AED0EA;
+            color: #2779AA;
             font-weight: bold;
         }
+        
+        .ui-datepicker-today .ui-state-active {
+            background: url("{$js}jquery-ui/cupertino/images/ui-bg_glass_50_3baae3_1x400.png") repeat-x scroll 50% 50% #3BAAE3;
+            border: 1px solid #2694E8;
+            color: #FFFFFF;
+            font-weight: bold;
+        }
+        
+        .ui-datepicker.ui-widget {
+            font-size: 0.9em;
+        }
+        
+        
+        .ui-datepicker th {
+            width: 4em;
+        }
+        
+        /* .ui-datepicker { font-size: 9pt !important; } */
         
         .specialDate { 
             background-color: #6F0 !important;
         }
         
         .babydata {
-            border: 1px solid white;
-            background: yellow;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 18px;
+            -webkit-border-radius: 7px;
+            -moz-border-radius: 7px;
+            border-radius: 7px;
+        }
+        
+        .babydata .row {
+            padding: 4px 4px 0 4px;
+        }
+        
+        .babydata .row span {
+            display: inline-block;
+        }
+        
+        .babydata .row:nth-child(even) {
+            background-color: #D7EBF9;
+        }
+        .babydata .row:nth-child(odd) {
+            background-color: #FFF;
+        }
+        
+        .babydata .row .time {
+            width: 40px;
+            font-style: italic;
         }
         
         .babydata .row .literal {
-            width: 40px;
-        }
-        
-        .babydata span.value {
-            width: 20px;
+            width: 100px;
+            font-weight: bold;
         }
 
-        .babydata span.unit {
-            width: 20px;
+        .babydata span.value {
+            width: 60px;
+        }
+        
+        .babydata .row .note {
+            border: 1px solid #CCCCCC;
+            background-color: #FFF;
+            font-style: italic;
+            padding: 2px;
+            display: none;
+            margin: 0 20px 0 20px;
+            -webkit-border-radius: 3px;
+            -moz-border-radius: 3px;
+            border-radius: 3px;
         }
         
         input.date {
@@ -114,6 +166,10 @@ $htmlHead .= <<<EOD
             text-decoration: none;
         }
         
+        a.showNote, a.showNote:visited {
+            color: #999999;
+        }
+        
         div#newPost {
             margin-bottom: 10px;
         }
@@ -123,6 +179,11 @@ $htmlHead .= <<<EOD
             padding-bottom: 10px;
         }
         
+        #message {
+            height: 15px;
+            margin-top: 5px;
+        }
+              
         /*
         .ui-datepicker .specialDate a { 
             background: #6F0;
@@ -137,6 +198,11 @@ var lastAction = "";
 
 (function($){
 
+    function getCurrentUrl() {
+        var href = window.location.href;
+        return href;
+    }
+
     function getParameterByName(name, href) {
         name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
         var regexS = "[\\?&]"+name+"=([^&#]*)";
@@ -149,20 +215,17 @@ var lastAction = "";
         }
     }
 
-    function retrieveAndDisplayBabyData(aMethod, json, message) {
+    function retrieveAndDisplayBabyData(theObj, message) {
         // First, create a map with date as key and and arrays of date
         // related baby data objects as values.
-        $("#bcont").empty();
-        
-        // Just to make it neat
-        if (typeof json === "undefined") {
-            json = "";
-        }
+        $("#message").empty();
 
         // Present a message first in the content block if a message is recieved.
         if (typeof message !== "undefined") {
-            $("#bcont").append("<div class='message'>" + message + "</div>");
+            $("#message").append("<div class='message'>" + message + "</div>");
         }
+        
+        var json = JSON.stringify(theObj);
 
         // Call the server side. The call takes to parameters:
         // * method - the method of choice (for availible methods see PFilterByDate.php)
@@ -171,15 +234,16 @@ var lastAction = "";
             url: "{$action}",
             type:'POST',
             dataType: "json",
-            data: {"method": aMethod, "payload": json},
+            data: {"payload": json},
             success: function(data) {
+                $("#bcont").empty();
                 // ********************************************************
                 // * Display the retrieved data using a handlebars template.
                 // *
                 var lastDate = null;
                 var tempMap = {};
                 var tempArray = [];
-                for (key in data) {
+                for (var key in data) {
                     if (data.hasOwnProperty(key)) {
                         if (lastDate == null || lastDate != data[key].date) {
                             lastDate = data[key].date;
@@ -189,7 +253,7 @@ var lastAction = "";
                     }
                 }
                 // Feed the template with the map created above.
-                for (key in tempMap) {
+                for (var key in tempMap) {
                     if (tempMap.hasOwnProperty(key)) {
                         $("#bcont").append(template({date: key, data: tempMap[key]}));
                     }
@@ -198,7 +262,19 @@ var lastAction = "";
         });
     }
     
-    function loadDatePicker(picker, aDate) {
+    function activateCurrentState(message) {
+        // In jQuery 1.4, use e.getState( "url" );
+        var url = $.bbq.getState( "url" );
+        var myObj = $.deparam.fragment( url );
+        if (myObj.action != "post" && myObj.action != "delete") {
+            retrieveAndDisplayBabyData(myObj, message);
+        }
+    }
+    
+    function loadDatePicker(picker, aDate, special) {
+        if (special !== true) {
+            special = false;
+        }
         var options = {
             firstDay: 1,
             dateFormat: "yy-mm-dd",
@@ -206,19 +282,25 @@ var lastAction = "";
             monthNames: ["Januari", "Februari", "Mars", "April", "Maj", "Juni", "Juli", "Augusti", "September", "Oktober", "November", "December"],
             dayNamesMin: ["Sö", "Må", "Ti", "On", "To", "Fr", "Lö"],
             onSelect: function(dateText) {
-                console.log(dateText);
-                var tempDate = JSON.stringify(dateText);
-                console.log(tempDate);
-                retrieveAndDisplayBabyData("selectDate", tempDate);
+                var paramsObj = {
+                    action: "selectDate",
+                    date: dateText
+                    
+                };
+                var newUrl = $.param.fragment("", paramsObj );
+                $.bbq.pushState({url:newUrl});
             },
             beforeShowDay: function (date) {
-                var day = 0,
-                    month = 0;
-                day = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
-                month = date.getMonth() + 1;
-                month = month < 10 ? "0" + month : month;
-                var theday = date.getFullYear() + '-' + month +'-'+ day;
-                return [true,$.inArray(theday, datesArray) >=0 ? "specialDate":''];
+                if (special) {
+                    var day = 0,
+                        month = 0;
+                    day = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
+                    month = date.getMonth() + 1;
+                    month = month < 10 ? "0" + month : month;
+                    var theday = date.getFullYear() + '-' + month +'-'+ day;
+                    return [true,$.inArray(theday, datesArray) >=0 ? "specialDate":''];
+                }
+                return [true, ''];
             }
         };
 
@@ -236,19 +318,25 @@ var lastAction = "";
             $('#newPost').toggle(400);
             return false;
         });
-
+        
         source = $("#data-template").html();
         // console.log(source);
         template = Handlebars.compile(source);
         
         $( "#button" ).button().click(function( event ) {
-            retrieveAndDisplayBabyData("showall");
+            var paramsObj = {
+                action: "showall"
+            };
+            var newUrl = $.param.fragment("", paramsObj );
+            $.bbq.pushState({url:newUrl});
             event.preventDefault();
         });
         
         $("#newButton").button().click(function(event) {
+            $("#message").empty();
             // collect values
             var obj = {};
+            obj.action = "post";
             obj.type = $("#newType option:selected").val();
             obj.value = $("#newValue").val();
             var date = $("#newDate").val();
@@ -260,18 +348,33 @@ var lastAction = "";
             console.log(json);
             
             console.log("Skickar: " + obj.type + " " + obj.value + " " + obj.datetime + " " + obj.note);
-            retrieveAndDisplayBabyData("post", json, "Uppdaterat med:");
             
-            if ($.inArray(date, datesArray) < 0) {
-                datesArray.push(date);
-                loadDatePicker("div#datePicker", null);
-                loadDatePicker("input#newDate", 'today');
-            }
+            $.ajax({
+                url: "{$action}",
+                type:'POST',
+                dataType: "json",
+                data: {"payload": json},
+                success: function(data) {
+                    // If the returning data contains a value in the id attribute
+                    // the update has gone well. Update UI.
+                    for (var key in data) {
+                        if (data.hasOwnProperty(key) && data[key]) {
+                            if ($.inArray(date, datesArray) < 0) {
+                                datesArray.push(date);
+                                loadDatePicker("div#datePicker", null);
+                                loadDatePicker("input#newDate", 'today');
+                            }
+                            
+                            activateCurrentState("Ny post inlagd.");
+                        }
+                    }
+                }
+            });
             
             event.preventDefault();
         });
         
-        loadDatePicker("div#datePicker", null);
+        loadDatePicker("div#datePicker", null, true);
         loadDatePicker("input#newDate", 'today');
 
         var today = new Date();
@@ -281,6 +384,7 @@ var lastAction = "";
         
         $("#bcont").on("click", function(event) {
             if ($(event.target).is('a.deletePost') || $(event.target).is('a.deletePost img')) {
+                $("#message").empty();
                 var href = "";
                 if ($(event.target).is('a.deletePost')) {
                     href = $(event.target).attr('href');
@@ -288,12 +392,45 @@ var lastAction = "";
                     href = $(event.target).parent().attr('href');
                 }
                 var id = getParameterByName("id", href);
-                var json = JSON.stringify(id);
-                retrieveAndDisplayBabyData("delete", json);
+                var obj = {};
+                obj.action = "delete";
+                obj.id = id;
+                
+                var json = JSON.stringify(obj);
+                
+                $.ajax({
+                    url: "{$action}",
+                    type:'POST',
+                    dataType: "json",
+                    data: {"payload": json},
+                    success: function(data) {
+                        console.log("Stuff deleted");
+                        if (data.status == "OK") {
+                            activateCurrentState("Post raderad.");
+                        }
+                    }
+                });
+                event.preventDefault();
+                return false;
+            } else if ($(event.target).is('a.showNote') || $(event.target).is('a.showNote img')) {
+                var href = "";
+                if ($(event.target).is('a.showNote')) {
+                    href = $(event.target).attr('href');
+                } else {
+                    href = $(event.target).parent().attr('href');
+                }
+                var id = getParameterByName("id", href);
+                $('#note' + id).toggle(400);
                 event.preventDefault();
                 return false;
             }
         });
+        
+        $(window).bind( "hashchange", function(e) {
+            activateCurrentState();
+        });
+        
+        $(window).trigger( 'hashchange' );
     });
 })(jQuery);
 EOD;
@@ -301,7 +438,7 @@ EOD;
 
 
 $htmlLeft 	= "";
-$htmlRight	= "<button id='button'>Visa alla poster</button><div id='datePicker'></div>";
+$htmlRight	= "<button style='margin-top: 14px; margin-bottom: 17px;' id='button'>Visa alla poster</button><div id='datePicker'></div>";
 
 // -------------------------------------------------------------------------------------------
 //
@@ -318,8 +455,8 @@ $htmlMain = <<<EOD
         <option value="SkullSize">Skallmått (cm)</option>
         <option value="BreastMilk">Bröstmjölk (ml)</option>
         <option value="Formula">Ersättning (ml)</option>
-        <option value="Poo">Har bajsat (ja/nej)</option>
-        <option value="Pee">Har kissat (ja/nej)</option>
+        <!--<option value="Poo">Har bajsat (ja/nej)</option>-->
+        <!--<option value="Pee">Har kissat (ja/nej)</option>-->
     </select>
     <input type="text" style="width:40px;" id="newValue" placeholder="värde" name="newValue" />
     <input type="text" class="date" id="newDate" name="newDate" placeholder="datum" />
@@ -328,8 +465,9 @@ $htmlMain = <<<EOD
     <div>
     <textarea placeholder="Frivillig kommentar..." id="newNote" name="newNote" rows="4" cols="50"></textarea>
     </div>
-    <button id='newButton'>Skicka</button>
+    <button id='newButton' style='margin-top: 3px;'>Skicka</button>
 </div>
+<div id="message"></div>
 <div id="bcont"></div>
 
 <!-- Templates for the page -->
@@ -340,11 +478,19 @@ $htmlMain = <<<EOD
         {{#each data}}
             {{#with this}}
                 <div class="row">
-                    <span class="literal">{{typec}}</span>:<span class="value">{{value}}</span><span class="unit">{{unit}}</span>
+                    <span class="time">{{time}}</span><span class="literal">{{typec}}</span><span class="value">{{value}} {{unit}}</span>
+                    {{#if note}}
+                    <a class="showNote" href="?id={{id}}">
+                        >>Notering>>
+                    </a>
+                    {{/if}}
                     <a class="deletePost" href="?id={{id}}">
                         <img src="{$img}close_16.png">
                     </a>
-                    <div class="clear"></div>
+                    <div class="cleaner"></div>
+                    {{#if note}}
+                        <div id="note{{id}}" class="note">{{note}}</div>
+                    {{/if}}
                 </div>
             {{/with}}
         {{/each}}

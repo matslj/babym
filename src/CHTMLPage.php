@@ -55,7 +55,6 @@ class CHTMLPage {
         } else {
             $nav 	= $this->prepareNavigationBar();
         }
-        $body 	= $this->preparePageBody($aHTMLLeft, $aHTMLMain, $aHTMLRight);
         $w3c	= $this->prepareValidatorTools();
         $timer	= $this->prepareTimer();
 
@@ -120,26 +119,88 @@ EOD;
             <a href="#" class="open">Öppna</a>
             <a href="#" class="close">Stäng</a>
         </div> <!-- Slut knapp för att öppna och stänga kommandopanel -->
-        
-        <div id="container">
-        <div id='wrap'>
-            <div id='top'>{$top}</div>
-            <header>
-                <div id='title'>
-                    <div class='left'>
-                        <p>{$titleSite}</p>
-                        {$subTitleSite}
-                    </div>
-                    <div class='right'>&nbsp;</div>
+        <div id="topbg"></div>
+        <div id="main">
+            <div id="header">
+                <div id="hdr-overlay"></div>
+                <h1>Baby manager</h1>
+                <h2>Håll koll på din bäbis</h2>
+            </div>
+
+            <div id="nav">
+            {$nav}
+            </div>
+            <div class="filler"></div>
+            <div class="cleaner"></div>
+
+            <div id="content">
+                <div id="left">
+                    {$aHTMLMain}
+                    <!--
+                    
+                    <h3 class="ttl">Mollit Anim</h3>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor <a style="background: none repeat scroll 0% 0% transparent; color: rgb(30, 100, 153);" href="#">incididunt</a> ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis <a style="background: none repeat scroll 0% 0% transparent; color: rgb(30, 100, 153);" href="#">nostrud</a> exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                    </p>
+                    <dl>
+                        <dt style="color: rgb(139, 177, 207);" class="ttl">Lorem</dt>
+                        <dd>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</dd>
+                        <dt style="color: rgb(139, 177, 207);" class="ttl">Ipsum</dt>
+                        <dd>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</dd>
+                    </dl>
+                    <img id="ico" src="l.png">
+                    <h4>Duis aute irure dolor</h4>
+                    <ul>
+                        <li><a style="background: none repeat scroll 0% 0% transparent; color: rgb(30, 100, 153);" href="#">Lorem ipsum</a></li>
+                        <li><a style="background: none repeat scroll 0% 0% transparent; color: rgb(30, 100, 153);" href="#">Dolor sit amet</a></li>
+                        <li><a style="background: none repeat scroll 0% 0% transparent; color: rgb(30, 100, 153);" href="#">Consectetur adipisicing</a></li>
+                    </ul>
+                    -->
                 </div>
-                <div id="nav">{$nav}</div>
-                {$aSubMenu}
-            </header>
-            {$body}
-            <footer><p>{$footer}</p></footer>
-            <div id='bottom'><p>{$timer}{$w3c}</p></div>
+
+                <div id="right">
+                    {$aHTMLRight}
+
+                    <!--
+                    
+                    <h3 style="color: rgb(139, 177, 207);" class="ttl"><span style="background: none repeat scroll 0% 0% rgb(17, 71, 113); border-color: rgb(30, 100, 153);"></span>Lorem ipsum dolor sit amet</h3>
+                    <img class="photo" src="photo1.jpg">
+                    <h4>Duis aute</h4>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ullamco laboris nisi ut aliquip.
+                    </p>
+                    <p class="link"><a style="background: none repeat scroll 0% 0% transparent; color: rgb(30, 100, 153);" href="#">Ut labore… »</a></p>
+
+                    <h3 style="color: rgb(139, 177, 207);" class="ttl"><span style="background: none repeat scroll 0% 0% rgb(17, 71, 113); border-color: rgb(30, 100, 153);"></span>Excepteur sint occaecat</h3>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ullamco.
+                    </p>
+
+                    <div style="background: none repeat scroll 0% 0% rgb(17, 71, 113); color: rgb(30, 100, 153);" id="rbox">
+                    <span style="background: none repeat scroll 0% 0% rgb(139, 177, 207);"></span>Adipisicing elit, sed do eiusmod tempor sunt in culpa qui officia.
+                    </div>
+
+                    <button style="border-color: rgb(17, 71, 113); background: none repeat scroll 0% 0% rgb(139, 177, 207); color: rgb(30, 100, 153);" type="button">Deserunt »</button>
+
+                    <div class="cleaner"></div>
+
+                    <img class="photo" src="photo2.jpg">
+                    <h4>Duis aute</h4>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ullamco laboris nisi ut aliquip.
+                    </p>
+                    <p class="link"><a style="background: none repeat scroll 0% 0% transparent; color: rgb(30, 100, 153);" href="#">Ut labore… »</a></p>
+                    
+                    -->
+                </div>
+
+                <div class="cleaner"></div>
+
+                <div style="background: none repeat scroll 0% 0% rgb(17, 71, 113); color: rgb(30, 100, 153); border-color: rgb(139, 177, 207);" id="footer">
+                    <a href="#">Lorem</a> |
+                    <a href="#">Ipsum</a> |
+                    <a href="#">Dolor</a> |
+                    <a href="#">Sit amet</a> |
+                    <a href="#">Aliquip</a>
+                </div>
+            </div>
         </div>
-        </div> <!-- container -->
     </body>
 </html>
 
@@ -218,7 +279,7 @@ EOD;
         global $gPage;
         $menu = unserialize($menu);
 
-        $nav = "<ul>";
+        $nav = "<ul id='menu'>";
         foreach($menu as $key => $value) {
             // If a # is found - the user must be logged in for the menu item to be visible
             $showMenuItem = true;
@@ -230,7 +291,7 @@ EOD;
             }
             if ($showMenuItem) {
                 $selected = (strcmp($gPage, substr($value, 3)) == 0) ? " class='sel'" : "";
-                $nav .= "<li{$selected}><a href='{$value}'>{$revKey}</a></li>";
+                $nav .= "<li><a{$selected} href='{$value}'><span></span>{$revKey}</a></li>";
             }
         }
         $nav .= "</ul>";
@@ -267,52 +328,6 @@ EOD;
         $nav .= '</ul></div>';
 
         return $nav;
-    }
-
-    // ------------------------------------------------------------------------------------
-    //
-    // Prepare everything within the body-div
-    //
-    //
-    public function PreparePageBody($aBodyLeft, $aBodyMain, $aBodyRight) {
-
-        // General error message from session
-        $htmlErrorMessage = $this->getErrorMessage();
-        // Have to make room on the page for the error-msg.
-        $errorStyle = !empty($htmlErrorMessage) ? " style='margin-top: 30px'" : "";
-
-        // Stylesheet must support this
-        // 1, 2 or 3-column layout?
-        // LMR, show left, main and right column
-        // LM,  show left and main column
-        // MR,  show main and right column
-        // M,   show main column
-        //
-        $cols  = empty($aBodyLeft)  ? '' : 'L';
-        $cols .= empty($aBodyMain)  ? '' : 'M';
-        $cols .= empty($aBodyRight) ? '' : 'R';
-
-        // Get content for each column, if defined, else empty
-        $bodyLeft  = empty($aBodyLeft)  ? "" : "<div id='left_{$cols}'>{$aBodyLeft}</div>";
-        $bodyRight = empty($aBodyRight) ? "" : "<div id='right_{$cols}'>{$aBodyRight}</div>";
-        $bodyMain  = empty($aBodyMain)  ? "" : "<div id='main_{$cols}'>{$aBodyMain}<p class='last'>&nbsp;</p></div>";
-
-        $html = <<<EOD
-<div id='body'{$errorStyle}>
-    {$htmlErrorMessage}
-    <div id='container_{$cols}'>
-            <div id='content_{$cols}'>
-                    {$bodyLeft}
-                    {$bodyMain}
-            </div> 												<!-- End Of #content -->
-    </div> 													<!-- End Of #container -->
-    {$bodyRight}
-    <div class='clear'>&nbsp;</div>
-</div> 														<!-- End Of #body -->
-
-EOD;
-
-            return $html;
     }
 
     // ------------------------------------------------------------------------------------
