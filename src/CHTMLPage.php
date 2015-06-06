@@ -127,10 +127,10 @@ EOD;
                 <h2>Håll koll på din bäbis</h2>
             </div>
 
-            <div id="nav">
+
             {$nav}
-            </div>
-            <div class="filler"></div>
+
+            
             <div class="cleaner"></div>
 
             <div id="content">
@@ -278,6 +278,8 @@ EOD;
 
         global $gPage;
         $menu = unserialize($menu);
+        
+        $counter = 0;
 
         $nav = "<ul id='menu'>";
         foreach($menu as $key => $value) {
@@ -290,10 +292,13 @@ EOD;
                 $revKey = substr($key, 1);
             }
             if ($showMenuItem) {
+                $counter = $counter + 1;
                 $selected = (strcmp($gPage, substr($value, 3)) == 0) ? " class='sel'" : "";
-                $nav .= "<li><a{$selected} href='{$value}'><span></span>{$revKey}</a></li>";
+                $nav .= "<li style='width: 20%;'><a{$selected} href='{$value}'><span></span>{$revKey}</a></li>";
             }
         }
+        $tempVal = 100 - (20 * $counter);
+        $nav .= "<li style='width: {$tempVal}%;'><div id='filler'></div></li>";
         $nav .= "</ul>";
 
         return $nav;

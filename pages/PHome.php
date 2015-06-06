@@ -66,6 +66,7 @@ $htmlHead .= <<<EOD
     <script src="{$js}jquery-bbq/jquery.ba-bbq.min.js"></script>
         
     <script src="{$js}timepicker/jquery.timepicker.js"></script>
+    <script src="{$js}chart/Chart.min.js"></script>
         
     <link rel="stylesheet" type="text/css" href="{$js}timepicker/jquery.timepicker.css" />
         
@@ -198,6 +199,44 @@ var lastAction = "";
 
 (function($){
 
+    function parseDate(input) {
+        var parts = input.split('-');
+        // new Date(year, month [, day [, hours[, minutes[, seconds[, ms]]]]])
+        return new Date(parts[0], parts[1]-1, parts[2]); // Note: months are 0-based
+    }
+    
+    /* For a given date, get the ISO week number
+     *
+     * Based on information at:
+     *
+     *    http://www.merlyn.demon.co.uk/weekcalc.htm#WNR
+     *
+     * Algorithm is to find nearest thursday, it's year
+     * is the year of the week number. Then get weeks
+     * between that date and the first day of that year.
+     *
+     * Note that dates in one year can be weeks of previous
+     * or next year, overlap is up to 3 days.
+     *
+     * e.g. 2014/12/29 is Monday in week  1 of 2015
+     *      2012/1/1   is Sunday in week 52 of 2011
+     */
+    function getWeekNumber(d) {
+        // Copy date so don't modify original
+        // d = new Date(+d);
+        d = parseDate(d);
+        d.setHours(0,0,0);
+        // Set to nearest Thursday: current date + 4 - current day number
+        // Make Sunday's day number 7
+        d.setDate(d.getDate() + 4 - (d.getDay()||7));
+        // Get first day of year
+        var yearStart = new Date(d.getFullYear(),0,1);
+        // Calculate full weeks to nearest Thursday
+        var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7)
+        // Return array of year and week number
+        return [d.getFullYear(), weekNo];
+    }
+
     function getCurrentUrl() {
         var href = window.location.href;
         return href;
@@ -322,6 +361,71 @@ var lastAction = "";
         source = $("#data-template").html();
         // console.log(source);
         template = Handlebars.compile(source);
+        
+        $('#menu a[href^=#]').live( 'click', function(e){
+            $("#menu a").removeClass('sel');
+            $(this).addClass('sel');
+
+            var paramsObj = {
+                action: "showall"
+            };
+            var json = JSON.stringify(paramsObj);
+
+            $.ajax({
+                url: "{$action}",
+                type:'POST',
+                dataType: "json",
+                data: {"payload": json},
+                success: function(data) {
+                    var lastDate = null;
+                    var tempMap = {};
+                    var tempArray = [];
+                    for (var key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            if (lastDate == null || lastDate != data[key].date) {
+                                lastDate = data[key].date;
+                                tempMap[lastDate] = [];
+                            } // *************************************************** HÅLLER PÅ HÄÄÄÄÄR ******************** göra i php?
+                            tempMap[lastDate].push(data[key]);
+                        }
+                    }
+                    var data = {
+	labels : ["January","February","March","April","May","June","July"],
+	datasets : [
+		{
+			fillColor : "rgba(220,220,220,0.5)",
+			strokeColor : "rgba(220,220,220,1)",
+			pointColor : "rgba(220,220,220,1)",
+			pointStrokeColor : "#fff",
+			data : [65,59,90,81,56,55,40]
+		},
+		{
+			fillColor : "rgba(151,187,205,0.5)",
+			strokeColor : "rgba(151,187,205,1)",
+			pointColor : "rgba(151,187,205,1)",
+			pointStrokeColor : "#fff",
+			data : [28,48,40,19,96,27,100]
+		}
+	]
+}
+                    //Get the context of the canvas element we want to select
+                    var ctx = document.getElementById("myChart").getContext("2d");
+                    var myNewChart = new Chart(ctx).Line(data);
+                    $("#graphDialog").dialog();
+                }
+            });
+            
+//            var href = $(this).attr("href");
+//            var fragment = $.param.fragment(href);
+//            var paramsObj = {
+//                action: fragment
+//            };
+//            var newUrl = $.param.fragment("", paramsObj );
+//            $.bbq.pushState({url:newUrl});
+//            // And finally, prevent the default link click behavior by returning false.
+            e.preventDefault();
+            return false;
+        });
         
         $( "#button" ).button().click(function( event ) {
             var paramsObj = {
@@ -469,6 +573,11 @@ $htmlMain = <<<EOD
 </div>
 <div id="message"></div>
 <div id="bcont"></div>
+
+<!-- Dialog boxes -->
+<div id="graphDialog" title="Linjediagram över">
+    <canvas id="myChart" width="400" height="400"></canvas>
+</div>
 
 <!-- Templates for the page -->
 <script id="data-template" type="text/x-handlebars-template">
